@@ -1,4 +1,4 @@
-env/
+TP3_env/
 __pycache__/
 *.pyc
 .DS_Store
