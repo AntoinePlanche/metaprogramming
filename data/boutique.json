@@ -1,0 +1,82 @@
+{
+"nom" : "MGL7460 Bazaar",
+"liste_produits": [ 
+    { "id": "CH1",
+    "nom": "chaise",
+    "description": "Une chaise longue",
+    "prixUnitaire": 129.95
+},
+{ "id": "TAB1",
+"nom": "Table",
+"description": "Une table courte",
+"prixUnitaire": 249.95
+},
+{ "id": "LAM1",
+"nom": "Lampe",
+"description": "Une lampe de bureau",
+"prixUnitaire": 39.95
+}
+],
+"liste_clients" : [
+    { 
+        "id": "CL1",
+        "nom": "Tremblay",
+        "prenom": "Sylvie",
+        "adresse": "Saguenay",
+        "liste_commandes": [
+            {
+                "id": "COM1",
+                "table_ligne_commandes": {
+                    "CHA1": { 
+                        "id_produit": "CHA1", 
+                        "quantite": 1 
+                    },
+                    "TAB1": {
+                        "id_produit": "TAB1",
+                        "quantite": 1
+                    }
+                }
+            },
+            {
+                "id": "COM2",
+                "table_ligne_commandes": {
+                    "LAM1": {
+                        "id_produit": "LAM1",
+                        "quantite": 1
+                    }
+                }
+            }
+        ]
+    },
+    { 
+        "id": "CL2",   
+        "nom": "Sauvé",
+        "prenom": "Martin",
+        "adresse": "Montréal",
+        "liste_commandes": [ 
+            {
+                "id": "COM3",
+                "table_ligne_commandes": {
+                    "CHA1": {
+                        "id_produit": "CHA1", 
+                        "quantite": 4
+                    }
+                }
+            },
+            {
+                "id": "COM4",
+                "table_ligne_commandes": {
+                    "TAB1": {
+                        "id_produit": "TAB1",
+                        "quantite": 1
+                    },
+                    "LAM1": {
+                        "id_produit": "LAM1",
+                        "quantite": 1
+                    }
+                }
+            }
+        ]
+    }
+]
+}
