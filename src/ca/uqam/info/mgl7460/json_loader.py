@@ -142,7 +142,7 @@ class json_loader:
 
         # 5. read json data and create corresponding python objects
         top_object = top_class.create_object(loader.jsobjet)
-        print ("Top object: "+ top_object.__str__())
+        print ("\n\nTop object: "+ top_object.__str__())
 
 
 if __name__ == '__main__':

@@ -4,7 +4,7 @@ class commande:
         self.table_ligne_commandes = {}
 
     def add_ligne_commande(self, a_ligne_commande):
-        self.table_ligne_commandes[a_ligne_commande.id_produit] = item
+        self.table_ligne_commandes[a_ligne_commande.id_produit] = a_ligne_commande
 
     def remove_ligne_commande_with_id_produit(self, id_produit):
         if id_produit in self.table_ligne_commandes:
@@ -16,9 +16,13 @@ class commande:
     def get_ligne_commande_with_id_produit(self, id_produit : str):
         return self.table_ligne_commandes.get(id_produit, None)
 
-    def __str__(self):
-        str_repr = ''
-        str_repr += 'id: {id}, ' if self.id is not None else ''
-        str_repr += '    ligne_commande: ' + str({key: value for key, value in self.ligne_commande.items()}) + '\n'
-        return str_repr[:-2] if str_repr else 'Empty JSONClass Object'
-
+    def __str__(self) -> str:
+        return_string = "commande["
+        return_string += "id = " + self.id.__str__() + ", " 
+        relation_str_ = "table_ligne_commandes" + " = ["
+        for key in iter(self.table_ligne_commandes.keys()):
+            relation_str_ += key + " -> " + self.table_ligne_commandes[key].__str__() + ", "
+        relation_str_ = relation_str_[:-2] + "]"
+        return_string += relation_str_ + ", "
+        return_string = return_string[:-2] + "]"
+        return return_string

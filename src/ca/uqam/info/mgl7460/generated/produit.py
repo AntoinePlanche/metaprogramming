@@ -5,11 +5,11 @@ class produit:
         self.description = description
         self.prixUnitaire = prixUnitaire
 
-    def __str__(self):
-        str_repr = ''
-        str_repr += 'id: {id}, ' if self.id is not None else ''
-        str_repr += 'nom: {nom}, ' if self.nom is not None else ''
-        str_repr += 'description: {description}, ' if self.description is not None else ''
-        str_repr += 'prixUnitaire: {prixUnitaire}, ' if self.prixUnitaire is not None else ''
-        return str_repr[:-2] if str_repr else 'Empty JSONClass Object'
-
+    def __str__(self) -> str:
+        return_string = "produit["
+        return_string += "id = " + self.id.__str__() + ", " 
+        return_string += "nom = " + self.nom.__str__() + ", " 
+        return_string += "description = " + self.description.__str__() + ", " 
+        return_string += "prixUnitaire = " + self.prixUnitaire.__str__() + ", " 
+        return_string = return_string[:-2] + "]"
+        return return_string

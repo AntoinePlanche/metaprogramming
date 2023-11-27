@@ -8,7 +8,7 @@ class boutique:
         self.liste_produits.append(a_produit)
 
     def remove_produit(self, a_produit):
-        if item in self.liste_produits:
+        if a_produit in self.liste_produits:
             self.liste_produits.remove(a_produit)
 
     def get_liste_produits(self):
@@ -18,16 +18,24 @@ class boutique:
         self.liste_clients.append(a_client)
 
     def remove_client(self, a_client):
-        if item in self.liste_clients:
+        if a_client in self.liste_clients:
             self.liste_clients.remove(a_client)
 
     def get_liste_clients(self):
         return iter(self.liste_clients)
 
-    def __str__(self):
-        str_repr = ''
-        str_repr += 'nom: {nom}, ' if self.nom is not None else ''
-        str_repr += '    produit: ' + str(list(self.produit)) + '\n'
-        str_repr += '    client: ' + str(list(self.client)) + '\n'
-        return str_repr[:-2] if str_repr else 'Empty JSONClass Object'
-
+    def __str__(self) -> str:
+        return_string = "boutique["
+        return_string += "nom = " + self.nom.__str__() + ", " 
+        relation_str_ = "liste_produits" + " = ["
+        for related in iter(self.liste_produits):
+            relation_str_ += related.__str__() + ", "
+        relation_str_ = relation_str_[:-2] + "]"
+        return_string += relation_str_ + ", "
+        relation_str_ = "liste_clients" + " = ["
+        for related in iter(self.liste_clients):
+            relation_str_ += related.__str__() + ", "
+        relation_str_ = relation_str_[:-2] + "]"
+        return_string += relation_str_ + ", "
+        return_string = return_string[:-2] + "]"
+        return return_string

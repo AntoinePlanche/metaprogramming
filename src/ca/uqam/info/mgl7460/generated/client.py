@@ -10,18 +10,22 @@ class client:
         self.liste_commandes.append(a_commande)
 
     def remove_commande(self, a_commande):
-        if item in self.liste_commandes:
+        if a_commande in self.liste_commandes:
             self.liste_commandes.remove(a_commande)
 
     def get_liste_commandes(self):
         return iter(self.liste_commandes)
 
-    def __str__(self):
-        str_repr = ''
-        str_repr += 'id: {id}, ' if self.id is not None else ''
-        str_repr += 'nom: {nom}, ' if self.nom is not None else ''
-        str_repr += 'prenom: {prenom}, ' if self.prenom is not None else ''
-        str_repr += 'adresse: {adresse}, ' if self.adresse is not None else ''
-        str_repr += '    commande: ' + str(list(self.commande)) + '\n'
-        return str_repr[:-2] if str_repr else 'Empty JSONClass Object'
-
+    def __str__(self) -> str:
+        return_string = "client["
+        return_string += "id = " + self.id.__str__() + ", " 
+        return_string += "nom = " + self.nom.__str__() + ", " 
+        return_string += "prenom = " + self.prenom.__str__() + ", " 
+        return_string += "adresse = " + self.adresse.__str__() + ", " 
+        relation_str_ = "liste_commandes" + " = ["
+        for related in iter(self.liste_commandes):
+            relation_str_ += related.__str__() + ", "
+        relation_str_ = relation_str_[:-2] + "]"
+        return_string += relation_str_ + ", "
+        return_string = return_string[:-2] + "]"
+        return return_string

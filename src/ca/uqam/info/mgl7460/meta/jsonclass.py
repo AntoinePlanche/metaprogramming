@@ -1,6 +1,7 @@
 from io import TextIOWrapper
 import importlib
 import inspect
+import json
 
 from ca.uqam.info.mgl7460.meta.relationship import Relationship
 
@@ -153,32 +154,33 @@ class JSONClass:
     # fields      
     def generate__str__method(self, python_file: TextIOWrapper):
         # 1. Génére l'en-tête de la fonction
-        python_file.write("    def __str__(self) -> str:\n")
-        python_file.write("        return_string = f\"{self.__class__.__name__}[' + '\\n'\n")
+        python_file.write(f"    def __str__(self) -> str:\n")
+        python_file.write(f"        return_string = \"{self.name}[\"\n")
 
         # 2. Génére les instructions qui imprimeront les attributs
         for attr_name in self.attributes:
-            python_file.write(f"        return_string += f\"{attr_name} = {{{attr_name}}}{{', ' if self.{attr_name} is not None else ''}}\"\n")
+            python_file.write(f"        return_string += \"{attr_name} = \" + self.{attr_name}.__str__() + \", \" \n")
         
         # 3. Génére les instructions qui imprimeront les relations
         for relation in iter(self.relationships.values()):
             if relation.index_field:
                 # Pour les relations indexées (comme les dictionnaires)
-                python_file.write(f"        relation_str_ = '{relation.name}' + \" = [\"\n")
-                python_file.write(f"        for key, value in self.{relation.name}.items():\n")
-                python_file.write(f"            relation_str_ += f\"{{key}} -> {{value}}, \"\n")
-                python_file.write("        relation_str_ = relation_str_[:-2] + ']'\n")
-                python_file.write("        return_string += relation_str_ + ', '\n")
+                python_file.write(f"        relation_str_ = \"table_{relation.name}s\" + \" = [\"\n")
+                python_file.write(f"        for key in iter(self.table_{relation.name}s.keys()):\n")
+                python_file.write(f"            relation_str_ += key + \" -> \" + self.table_{relation.name}s[key].__str__() + \", \"\n")
+                python_file.write("        relation_str_ = relation_str_[:-2] + \"]\"\n")
+                python_file.write("        return_string += relation_str_ + \", \"\n")
             else:
                 # Pour les relations non indexées (comme les listes)
-                python_file.write(f"        relation_str_ = '{relation.name}' + \" = [\"\n")
-                python_file.write(f"        for related in iter(self.{relation.name}):\n")
-                python_file.write(f"            relation_str_ += f\"{{related}}, \"\n")
-                python_file.write("        relation_str_ = relation_str_[:-2] + ']'\n")
-                python_file.write("        return_string += relation_str_ + ', '\n")
+                python_file.write(f"        relation_str_ = \"liste_{relation.name}s\" + \" = [\"\n")
+                python_file.write(f"        for related in iter(self.liste_{relation.name}s):\n")
+                python_file.write(f"            relation_str_ += related.__str__() + \", \"\n")
+                python_file.write("        relation_str_ = relation_str_[:-2] + \"]\"\n")
+                python_file.write("        return_string += relation_str_ + \", \"\n")
 
         # 4. Ajoute le retour de la fonction et le retour chariot
-        python_file.write("        return str_repr[:-2] if str_repr else 'Empty JSONClass Object'\n")
+        python_file.write("        return_string = return_string[:-2] + \"]\"\n")
+        python_file.write("        return return_string")
         python_file.write("\n")
 
 
@@ -302,7 +304,6 @@ class JSONClass:
         
         # Obtenir une référence à la classe
         class_ref = getattr(module, self.name)
-
         # Vérifie si class_ref est bien une classe
         if not isinstance(class_ref, type):
             raise TypeError(f"{self.name} dans {self.package} n'est pas une classe")
@@ -313,19 +314,19 @@ class JSONClass:
 
         # 2. Ajouter maintenant les relations
         for relation in iter(self.relationships.values()):
-            relation_value = json_fragment.get(relation.name, [])
-
             if (relation.is_indexed()):
+                relation_value = json_fragment.get(f"table_{relation.name}s", [])
                 # 2.1.a Gérer comme une table (dictionnaire)
                 for value in relation_value.values():
                     # Créer l'objet de destination et l'ajouter à la relation
-                    related_object = JSONClass.JSON_CLASSES[relation.target_type_name].create_object(json.dumps(value))
+                    related_object = JSONClass.JSON_CLASSES[relation.destination_entity].create_object(value)
                     getattr(new_object, f"add_{relation.name}")(related_object)
             else:
+                relation_value = json_fragment.get(f"liste_{relation.name}s", [])
                 # 2.1.b Gérer comme une simple liste
                 for item in relation_value:
                     # Créer l'objet de destination et l'ajouter à la relation
-                    related_object = JSONClass.JSON_CLASSES[relation.target_type_name].create_object(json.dumps(item))
+                    related_object = JSONClass.JSON_CLASSES[relation.destination_entity].create_object(item)
                     getattr(new_object, f"add_{relation.name}")(related_object)
                     
         return new_object
