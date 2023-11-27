@@ -1,8 +1,5 @@
 from io import TextIOWrapper
 import json
-import numbers
-import importlib
-import inspect
 from ca.uqam.info.mgl7460.meta.jsonclass import JSONClass
 from ca.uqam.info.mgl7460.meta.relationship import Relationship
 

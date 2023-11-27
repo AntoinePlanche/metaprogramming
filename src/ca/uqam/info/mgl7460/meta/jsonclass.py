@@ -1,7 +1,5 @@
 from io import TextIOWrapper
 import importlib
-import inspect
-import json
 
 from ca.uqam.info.mgl7460.meta.relationship import Relationship
 
