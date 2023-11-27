@@ -1,0 +1,21 @@
+{
+    "nom": "Boutique XYZ",
+    "adresse": "123 Rue Principale",
+    "liste_clients": [
+        {
+            "id": "CL1",
+            "nom": "Dupont",
+            "prenom": "Jean",
+            "liste_commandes": [
+                {
+                    "id": "COM1",
+                    "date": "2021-07-01",
+                    "table_ligne_commandes": {
+                        "LIG1": {"id_produit": "P1", "quantite": 2},
+                        "LIG2": {"id_produit": "P2", "quantite": 1}
+                    }
+                }
+            ]
+        }
+    ]
+}
