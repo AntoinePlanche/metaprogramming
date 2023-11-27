@@ -1,6 +1,6 @@
 from io import TextIOWrapper
 import importlib
-import json
+import inspect
 
 from ca.uqam.info.mgl7460.meta.relationship import Relationship
 
@@ -123,7 +123,7 @@ class JSONClass:
     def generate_constructor(self, python_file: TextIOWrapper):
         # 1. Generate header
         constructor_header = "    def __init__(self, "
-        constructor_header += ", ".join(f"{name}: {type_.__name__}" for name, type_ in self.attributes.items())
+        constructor_header += ", ".join(f"{name}: {type_}" for name, type_ in self.attributes.items())
         constructor_header += "):\n"
         python_file.write(constructor_header)
         # 2. Generate code to initialize attributes
@@ -138,12 +138,12 @@ class JSONClass:
             elif relation.multiplicity == Relationship.ONE_TO_MANY:
                 # 3.2.1 It is indexed
                 if relation.index_field:
-                    python_file.write(f"        self.{relation.name} = {{}}\n")
+                    python_file.write(f"        self.table_{relation.name}s = {{}}\n")
                 # 3.2.2 It is not indexed
                 else:
-                    python_file.write(f"        self.{relation.name} = []\n")
+                    python_file.write(f"        self.liste_{relation.name}s = []\n")
 
-        python_file.write("\n\n")    
+        python_file.write("\n")    
 
 
     # This method generates the __str__ method. it simply prints
@@ -153,22 +153,29 @@ class JSONClass:
     # fields      
     def generate__str__method(self, python_file: TextIOWrapper):
         # 1. Génére l'en-tête de la fonction
-        python_file.write("    def __str__(self):\n")
-        python_file.write("        str_repr = ''\n")
+        python_file.write("    def __str__(self) -> str:\n")
+        python_file.write("        return_string = f\"{self.__class__.__name__}[' + '\\n'\n")
 
         # 2. Génére les instructions qui imprimeront les attributs
         for attr_name in self.attributes:
-            python_file.write(f"        str_repr += '{attr_name}: {{{attr_name}}}, ' if self.{attr_name} is not None else ''\n")
+            python_file.write(f"        return_string += f\"{attr_name} = {{{attr_name}}}{{', ' if self.{attr_name} is not None else ''}}\"\n")
         
         # 3. Génére les instructions qui imprimeront les relations
         for relation in iter(self.relationships.values()):
             if relation.index_field:
                 # Pour les relations indexées (comme les dictionnaires)
-                python_file.write(f"        str_repr += '    {relation.name}: ' + str({{key: value for key, value in self.{relation.name}.items()}}) + '\\n'\n")
+                python_file.write(f"        relation_str_ = '{relation.name}' + \" = [\"\n")
+                python_file.write(f"        for key, value in self.{relation.name}.items():\n")
+                python_file.write(f"            relation_str_ += f\"{{key}} -> {{value}}, \"\n")
+                python_file.write("        relation_str_ = relation_str_[:-2] + ']'\n")
+                python_file.write("        return_string += relation_str_ + ', '\n")
             else:
                 # Pour les relations non indexées (comme les listes)
-                python_file.write(f"        str_repr += '    {relation.name}: ' + str(list(self.{relation.name})) + '\\n'\n")
-                pass
+                python_file.write(f"        relation_str_ = '{relation.name}' + \" = [\"\n")
+                python_file.write(f"        for related in iter(self.{relation.name}):\n")
+                python_file.write(f"            relation_str_ += f\"{{related}}, \"\n")
+                python_file.write("        relation_str_ = relation_str_[:-2] + ']'\n")
+                python_file.write("        return_string += relation_str_ + ', '\n")
 
         # 4. Ajoute le retour de la fonction et le retour chariot
         python_file.write("        return str_repr[:-2] if str_repr else 'Empty JSONClass Object'\n")
@@ -208,14 +215,13 @@ class JSONClass:
     # is "self.<relation name>[parameter_name.<relation.index_field>] = parameter_name "
     def get_adder_string(self, relation_name: str, relation: Relationship)-> str:
         # En-tête de la méthode adder
-        adder_code = f"    def add_{relation_name}(self, item):\n"
-
+        adder_code = f"    def add_{relation_name}(self, a_{relation_name}):\n"
         if relation.index_field is None:
             # Cas pour une liste : ajouter l'élément à la liste
-            adder_code += f"        self.{relation_name}.append(item)\n"
+            adder_code += f"        self.liste_{relation_name}s.append(a_{relation_name})\n"
         else:
             # Cas pour un dictionnaire : ajouter l'élément avec l'index_field comme clé
-            adder_code += f"        self.{relation_name}[item.{relation.index_field}] = item\n"
+            adder_code += f"        self.table_{relation_name}s[a_{relation_name}.{relation.index_field}] = a_{relation_name}\n"
 
         return adder_code + "\n"
 
@@ -226,19 +232,18 @@ class JSONClass:
     # where <index field> is relation.index_field. Thus, the expression
     # is "self.<relation name>.pop(parameter_name.<relation.index_field>)"
     def get_remover_string(self, relation_name: str, relation: Relationship)-> str:
-        # En-tête de la méthode remover
-        remover_code = f"    def remove_{relation_name}(self, item):\n"
-
         if relation.index_field is None:
+            # En-tête de la méthode remover
+            remover_code = f"    def remove_{relation_name}(self, a_{relation_name}):\n"
             # Cas pour une liste : supprimer l'élément de la liste
-            remover_code += f"        if item in self.{relation_name}:\n"
-            remover_code += f"            self.{relation_name}.remove(item)\n"
+            remover_code += f"        if a_{relation_name} in self.liste_{relation_name}s:\n"
+            remover_code += f"            self.liste_{relation_name}s.remove(a_{relation_name})\n"
         else:
+            # En-tête de la méthode remover
+            remover_code = f"    def remove_{relation_name}_with_{relation.index_field}(self, {relation.index_field}):\n"
             # Cas pour un dictionnaire : supprimer l'élément en utilisant l'index_field comme clé
-            remover_code += f"        key = item.{relation.index_field}\n"
-            remover_code += f"        if key in self.{relation_name}:\n"
-            remover_code += f"            self.{relation_name}.pop(key)\n"
-
+            remover_code += f"        if {relation.index_field} in self.table_{relation_name}s:\n"
+            remover_code += f"            self.table_{relation_name}s.pop({relation.index_field})\n"
         return remover_code + "\n"
 
 
@@ -246,15 +251,16 @@ class JSONClass:
     # use "iter(self.<relation name>)" or 
     # or "iter(self.<relation name>.values())"
     def get_iterator_string(self, relation_name: str, relation: Relationship)-> str:
-        # En-tête de la méthode iterator
-        iterator_code = f"    def iterate_{relation_name}(self):\n"
-
         if relation.index_field is None:
+            # En-tête de la méthode iterator
+            iterator_code = f"    def get_liste_{relation_name}s(self):\n"
             # Cas pour une liste : renvoyer un itérateur sur la liste
-            iterator_code += f"        return iter(self.{relation_name})\n"
+            iterator_code += f"        return iter(self.liste_{relation_name}s)\n"
         else:
+            # En-tête de la méthode iterator
+            iterator_code = f"    def get_table_{relation_name}s(self):\n"
             # Cas pour un dictionnaire : renvoyer un itérateur sur les valeurs du dictionnaire
-            iterator_code += f"        return iter(self.{relation_name}.values())\n"
+            iterator_code += f"        return iter(self.table_{relation_name}s.values())\n"
 
         return iterator_code + "\n"
 
@@ -264,12 +270,19 @@ class JSONClass:
         # On s'assure que la relation est effectivement indexée
         if relation.index_field is None:
             return ""
-
+        # Trouve la classe cible dans le dictionnaire global des classes JSON
+        target_class = JSONClass.JSON_CLASSES.get(relation.destination_entity)
+        if target_class is None:
+            raise ValueError(f"Classe cible '{relation.destination_entity}' non trouvée.")
+        
+        # Trouver le type de l'index_field dans les attributs de la classe cible
+        index_field_type = target_class.attributes.get(relation.index_field, object)
+        
         # En-tête de la fonction d'accès indexée
-        indexed_accessor_code = f"    def get_{relation_name}(self, key):\n"
+        indexed_accessor_code = f"    def get_{relation_name}_with_{relation.index_field}(self, {relation.index_field} : {index_field_type}):\n"
 
         # Générer le code pour accéder à un élément en utilisant la clé
-        indexed_accessor_code += f"        return self.{relation_name}.get(key, None)\n"
+        indexed_accessor_code += f"        return self.table_{relation_name}s.get({relation.index_field}, None)\n"
 
         return indexed_accessor_code + "\n"
 
@@ -281,25 +294,26 @@ class JSONClass:
     # Depending on the structure of the class, if the class has relationships
     # to other classes, then objects of the other classes are created, 
     # recursively.
-    # 
-    def create_object(self, json_fragment: str):
-        # Convertir le fragment JSON en un dictionnaire Python
-        data = json.loads(json_fragment)
+    def create_object(self, json_fragment: dict):
+        # Charger le module contenant la classe
+        module = importlib.import_module(self.package + '.' + self.name)
+        if not hasattr(module, self.name):
+            raise ImportError(f"Classe {self.name} non trouvée dans le module {self.package}")
+        
+        # Obtenir une référence à la classe
+        class_ref = getattr(module, self.name)
 
-        # 1. Construire l'objet
-        # 1.1. Obtenir la liste des paramètres du constructeur
-        constructor_params = {attr: data.get(attr, None) for attr in self.attributes}
-
-        # 1.2. Créer une chaîne représentant l'invocation du constructeur
-        constructor_invocation = f"{self.name}(**{constructor_params})"
-
-        # 1.3. Évaluer l'expression pour créer l'objet
-        # C'est risqué et inutilisable comme cela en production mais j'ai confiance dans Pr. Mili
-        new_object = eval(constructor_invocation)
+        # Vérifie si class_ref est bien une classe
+        if not isinstance(class_ref, type):
+            raise TypeError(f"{self.name} dans {self.package} n'est pas une classe")
+        
+        # 1. Construire l'objet avec les paramètres du constructeur
+        constructor_params = {attr: json_fragment.get(attr, None) for attr in self.attributes}
+        new_object = class_ref(**constructor_params)
 
         # 2. Ajouter maintenant les relations
         for relation in iter(self.relationships.values()):
-            relation_value = data.get(relation.name, [])
+            relation_value = json_fragment.get(relation.name, [])
 
             if (relation.is_indexed()):
                 # 2.1.a Gérer comme une table (dictionnaire)
