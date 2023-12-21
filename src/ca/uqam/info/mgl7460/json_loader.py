@@ -75,7 +75,7 @@ class json_loader:
             if isinstance(value, list):
                 self.proccess_list(current_class, key, value)
             elif isinstance(value, dict):
-                self.procces_dict(current_class,key,value)
+                self.proccess_dict(current_class,key,value)
             else:
                 # Attribut simple
                 current_class.add_attribute(key, type(value).__name__)
@@ -104,7 +104,7 @@ class json_loader:
 
     # To reduce the complexity of the build_class method this method was created
     # it procces the value being a dictionnary
-    def procces_dict(self, current_class, key, dict:dict):
+    def proccess_dict(self, current_class, key, dict:dict):
         if key.startswith("table_"):
             # Traitement d'un dictionnaire : relation ONE_TO_MANY indexée ou attribut complexe
             related_class_name = key[6:]
