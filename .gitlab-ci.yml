@@ -37,7 +37,7 @@ test:
 run:
   script:
     - pip install .
-    # run the command here
+    - python src/ca/uqam/info/mgl7460/json_loader.py
   artifacts:
     paths:
       - build/*
