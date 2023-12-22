@@ -1,4 +1,3 @@
-from io import TextIOWrapper
 import json
 from ca.uqam.info.mgl7460.meta.jsonclass import JSONClass
 from ca.uqam.info.mgl7460.meta.relationship import Relationship
@@ -74,39 +73,9 @@ class json_loader:
         # Itére sur le fragment json
         for key, value in json_fragment.items():
             if isinstance(value, list):
-                # Traitement d'une liste : relation ONE_TO_MANY non indexée
-                related_class_name = key[6:] if key.startswith("liste_") else key
-                if related_class_name.endswith('s'):
-                    related_class_name = related_class_name[:-1]  # Enleve le 's' final
-                relation_name = related_class_name # Nom de la relation
-                current_class.add_relationship(relation_name, related_class_name, Relationship.ONE_TO_MANY)
-
-                # Appel récursif pour chaque élément de la liste
-                for item in value:
-                    self.build_class(related_class_name, item)
-
+                self.proccess_list(current_class, key, value)
             elif isinstance(value, dict):
-                if key.startswith("table_"):
-                    # Traitement d'un dictionnaire : relation ONE_TO_MANY indexée ou attribut complexe
-                    if key.startswith("table_"):
-                        related_class_name = key[6:]
-                        if related_class_name.endswith('s'):
-                            related_class_name = related_class_name[:-1]
-                    relation_name = related_class_name  # Nom de la relation
-                    # Identifie le champ d'indexation en parcourant les clés de l'objet
-                    sample_item = next(iter(value.values()))
-                    index_field = next((k for k in sample_item.keys() if k.startswith('id')), 'id_' + related_class_name)
-                    current_class.add_relationship(relation_name, related_class_name, Relationship.ONE_TO_MANY, index_field)
-
-                    # Appel récursif pour chaque valeur du dictionnaire
-                    for item in value.values():
-                        self.build_class(related_class_name, item)
-                else:
-                    # Relation ONE_TO_ONE ou attribut complexe
-                    related_class_name = key  # Le nom de la classe liée est la clé elle-même
-                    relation_name = related_class_name  # Nom de la relation
-                    current_class.add_relationship(relation_name, related_class_name, Relationship.ONE_TO_ONE)
-                    self.build_class(related_class_name, value) # Appel récursif pour l'objet complexe
+                self.proccess_dict(current_class,key,value)
             else:
                 # Attribut simple
                 current_class.add_attribute(key, type(value).__name__)
@@ -118,6 +87,44 @@ class json_loader:
 
         # return the constructed class
         return current_class
+    
+    # To reduce the complexity of the build_class method this method was created
+    # it procces the value being a list
+    def proccess_list(self, current_class, key, list:list):
+        # Traitement d'une liste : relation ONE_TO_MANY non indexée
+        related_class_name = key[6:] if key.startswith("liste_") else key
+        if related_class_name.endswith('s'):
+            related_class_name = related_class_name[:-1]  # Enleve le 's' final
+        relation_name = related_class_name # Nom de la relation
+        current_class.add_relationship(relation_name, related_class_name, Relationship.ONE_TO_MANY)
+
+        # Appel récursif pour chaque élément de la liste
+        for item in list:
+            self.build_class(related_class_name, item)
+
+    # To reduce the complexity of the build_class method this method was created
+    # it procces the value being a dictionnary
+    def proccess_dict(self, current_class, key, dict:dict):
+        if key.startswith("table_"):
+            # Traitement d'un dictionnaire : relation ONE_TO_MANY indexée ou attribut complexe
+            related_class_name = key[6:]
+            if related_class_name.endswith('s'):
+                related_class_name = related_class_name[:-1]
+            relation_name = related_class_name  # Nom de la relation
+            # Identifie le champ d'indexation en parcourant les clés de l'objet
+            sample_item = next(iter(dict.values()))
+            index_field = next((k for k in sample_item.keys() if k.startswith('id')), 'id_' + related_class_name)
+            current_class.add_relationship(relation_name, related_class_name, Relationship.ONE_TO_MANY, index_field)
+
+            # Appel récursif pour chaque valeur du dictionnaire
+            for item in dict.values():
+                self.build_class(related_class_name, item)
+        else:
+            # Relation ONE_TO_ONE ou attribut complexe
+            related_class_name = key  # Le nom de la classe liée est la clé elle-même
+            relation_name = related_class_name  # Nom de la relation
+            current_class.add_relationship(relation_name, related_class_name, Relationship.ONE_TO_ONE)
+            self.build_class(related_class_name, dict) # Appel récursif pour l'objet complexe
         
 
     # The "main" program

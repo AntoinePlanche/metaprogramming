@@ -3,7 +3,6 @@ import importlib
 
 from ca.uqam.info.mgl7460.meta.relationship import Relationship
 
-
 class JSONClass:
 
     # A dictionary of JSON classes, indexed by fully qualified class name
@@ -111,7 +110,6 @@ class JSONClass:
         # Stocker ce type dans self.type pour une utilisation future
         self.type = class_class_object
 
-        # self.type = class_class_object
         return self.type
 
 
@@ -152,7 +150,7 @@ class JSONClass:
     # fields      
     def generate__str__method(self, python_file: TextIOWrapper):
         # 1. Génére l'en-tête de la fonction
-        python_file.write(f"    def __str__(self) -> str:\n")
+        python_file.write("    def __str__(self) -> str:\n".format())
         python_file.write(f"        return_string = \"{self.name}[\"\n")
 
         # 2. Génére les instructions qui imprimeront les attributs
@@ -172,7 +170,7 @@ class JSONClass:
                 # Pour les relations non indexées (comme les listes)
                 python_file.write(f"        relation_str_ = \"liste_{relation.name}s\" + \" = [\"\n")
                 python_file.write(f"        for related in iter(self.liste_{relation.name}s):\n")
-                python_file.write(f"            relation_str_ += related.__str__() + \", \"\n")
+                python_file.write("            relation_str_ += related.__str__() + \", \"\n")
                 python_file.write("        relation_str_ = relation_str_[:-2] + \"]\"\n")
                 python_file.write("        return_string += relation_str_ + \", \"\n")
 
