@@ -2,7 +2,6 @@ class Relationship:
         ONE_TO_ONE = 1
         ONE_TO_MANY = 99
         
-        #
         def __init__(self, name: str, source_entity: str, destination_entity: str, multiplicity: int, index_field : str = None):
                 self.name = name
                 self.source_entity = source_entity
